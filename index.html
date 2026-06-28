@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JaguAR - Verificacion</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+background:#0A0A0A;display:flex;justify-content:center;align-items:center;
+min-height:100vh;padding:20px}
+.card{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:20px;padding:32px 24px;
+max-width:380px;width:100%;text-align:center}
+.logo{font-size:20px;font-weight:900;color:#FF3B30;margin-bottom:20px;letter-spacing:1px}
+.check{width:80px;height:80px;border-radius:40px;background:rgba(52,199,89,0.15);
+border:3px solid #34C759;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.check svg{width:40px;height:40px}
+.verified{font-size:22px;font-weight:900;color:#34C759;margin-bottom:24px}
+.code-label{font-size:12px;color:#666;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.code{font-size:28px;font-weight:900;color:#fff;letter-spacing:3px;
+background:#111;border:1px solid #2A2A2A;border-radius:12px;padding:16px;margin-bottom:20px;
+font-family:'Courier New',monospace}
+.user{font-size:14px;color:#888;margin-bottom:6px}
+.plan{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;
+font-weight:800;letter-spacing:0.5px;margin-bottom:20px}
+.plan-premium{background:linear-gradient(90deg,#FF3B30,#FF9500);color:#fff}
+.plan-free{background:#2A2A2A;color:#888;border:1px solid #333}
+.info{font-size:12px;color:#555;border-top:1px solid #2A2A2A;padding-top:14px;margin-top:8px;line-height:20px}
+.loading{color:#888;font-size:16px;padding:40px 0}
+.error-icon{width:80px;height:80px;border-radius:40px;background:rgba(255,59,48,0.15);
+border:3px solid #FF3B30;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.error-icon svg{width:40px;height:40px}
+.error-msg{font-size:18px;font-weight:700;color:#FF3B30}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="logo">JaguAR</div>
+  <div class="loading" id="loading">Verificando usuario...</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nrsujarcppgdjdpllllj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_uQLf-HXizCPuHgyzHFlHmw_m9Jpxx7e';
+
+async function verify() {
+  var params = new URLSearchParams(window.location.search);
+  var userId = params.get('id');
+
+  if (!userId) {
+    showError('No se proporcionó un ID de usuario.');
+    return;
+  }
+
+  try {
+    var res = await fetch(
+      SUPABASE_URL + '/rest/v1/profiles?id=eq.' + userId + '&select=username,is_premium,created_at',
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY
+        }
+      }
+    );
+
+    var data = await res.json();
+
+    if (!data || data.length === 0) {
+      showError('Usuario no encontrado.');
+      return;
+    }
+
+    var profile = data[0];
+    var code = userId.substring(0, 8).toUpperCase();
+    var plan = profile.is_premium ? 'PREMIUM' : 'FREE';
+    var planClass = plan.toLowerCase();
+
+    var joinDate = new Date(profile.created_at);
+    var meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    var joined = joinDate.getDate() + ' de ' + meses[joinDate.getMonth()] + ' de ' + joinDate.getFullYear();
+
+    var now = new Date();
+    var verified = now.toLocaleDateString('es-AR') + ', ' + now.toLocaleTimeString('es-AR');
+
+    var card = document.getElementById('card');
+    card.innerHTML = '<div class="logo">JaguAR</div>'
+      + '<div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>'
+      + '<div class="verified">VERIFICADO</div>'
+      + '<div class="code-label">Codigo de usuario</div>'
+      + '<div class="code">' + code + '</div>'
+      + '<div class="user">@' + profile.username + '</div>'
+      + '<span class="plan plan-' + planClass + '">' + plan + '</span>'
+      + '<div class="info">Miembro desde ' + joined + '<br>Verificado: ' + verified + '</div>';
+
+  } catch (e) {
+    showError('Error al verificar. Compruebe su conexión.');
+  }
+}
+
+function showError(msg) {
+  var card = document.getElementById('card');
+  card.innerHTML = '<div class="logo">JaguAR</div>'
+    + '<div class="error-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>'
+    + '<div class="error-msg">' + msg + '</div>';
+}
+
+verify();
+</script>
+</body>
+</html>
